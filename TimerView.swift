@@ -44,10 +44,9 @@ struct TimerView: View {
     @State private var timerStarted = false
     @State private var completedFocusSessions: Int = 0
     @State private var currentCycleIndex: Int = 0
-    @State private var isSessionResumed: Bool = false
-    @State private var previousTotalSessions: Int = 0
+    @State private var pauseActivated = false
     
-
+    
     
     init(timerStats: TimerStats, isBreakTime: Binding<Bool>) {
         self._isBreakTime = isBreakTime // Initialize isBreakTime
@@ -83,8 +82,10 @@ struct TimerView: View {
                     if isRunning {
                         timerStarted = true // update state variable
                         startTimer()
+                        pauseActivated = false
                     } else {
                         stopTimer()
+                        pauseActivated = true
                     }
                 }) {
                     if isRunning {
@@ -133,7 +134,7 @@ struct TimerView: View {
             }
         }
     }
-
+    
     private func startTimer() {
         guard timer == nil else { return }
 
@@ -142,7 +143,10 @@ struct TimerView: View {
         } else {
             timerStats.focusSessionsStarted += 1
         }
-        timerStats.totalSessions += 1
+        
+        if !pauseActivated {
+            timerStats.totalSessions += 1
+        }
 
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if timeRemaining > 0 {
@@ -159,9 +163,8 @@ struct TimerView: View {
                         currentCycleIndex += 2
                     } else {
                         timerStats.totalBreakMinutes += longBreakDuration
-                        timeRemaining = focusDuration * 60
-                        currentCycleIndex = 0
-                        completedFocusSessions = 0
+                        resetTimer()
+                        return
                     }
                     isBreakTime = false
                 }
@@ -186,6 +189,7 @@ struct TimerView: View {
             }
         }
     }
+
     
     private func stopTimer() {
         timer?.invalidate()
@@ -197,7 +201,7 @@ struct TimerView: View {
             }
         }
     }
-
+    
     private func resetTimer() {
         stopTimer()
         isRunning = false
@@ -205,31 +209,40 @@ struct TimerView: View {
         timeRemaining = focusDuration * 60
         timerStarted = false
         timerStats.totalSessions = 0
+        currentCycleIndex = 0
+        completedFocusSessions = 0
     }
-}
-
-struct CircleFill: View {
-    let index: Int
-    let totalSessions: Int
-
-    var body: some View {
-        ZStack {
-            if totalSessions - 1 > index * 2 {
-                Image(systemName: "circle.fill")
-                    .resizable()
-                    .frame(width: 8.0, height: 8.0)
-            } else if totalSessions - 1 == index * 2 {
-                Image(systemName: "circle.lefthalf.fill")
-                    .resizable()
-                    .frame(width: 8.0, height: 8.0)
-            } else {
-                Image(systemName: "circle")
-                    .resizable()
-                    .frame(width: 8.0, height: 8.0)
+    
+    
+    struct CircleFill: View {
+        let index: Int
+        let totalSessions: Int
+        var halfFilled: Bool {
+            return totalSessions - 1 == index * 2
+        }
+        
+        var body: some View {
+            ZStack {
+                if halfFilled {
+                    Image(systemName: "circle.lefthalf.fill")
+                        .resizable()
+                        .frame(width: 8.0, height: 8.0)
+                } else if totalSessions > index * 2 {
+                    Image(systemName: "circle.fill")
+                        .resizable()
+                        .frame(width: 8.0, height: 8.0)
+                } else {
+                    Image(systemName: "circle")
+                        .resizable()
+                        .frame(width: 8.0, height: 8.0)
+                }
             }
         }
     }
-}
+    
+    
+    
+    
     
     struct TimerView_Previews: PreviewProvider {
         @State static var isBreakTimePreview = false
@@ -239,3 +252,4 @@ struct CircleFill: View {
             TimerView(timerStats: timerStatsPreview, isBreakTime: $isBreakTimePreview)
         }
     }
+}
