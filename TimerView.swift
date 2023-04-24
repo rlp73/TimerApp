@@ -157,7 +157,7 @@ struct TimerView: View {
 
                 if isBreakTime {
                     timerStats.breakSessionsCompleted += 1
-                    if currentCycleIndex < 7 {
+                    if currentCycleIndex < 6 {
                         timerStats.totalBreakMinutes += breakDuration
                         timeRemaining = focusDuration * 60
                         currentCycleIndex += 2
@@ -173,7 +173,7 @@ struct TimerView: View {
                     timerStats.totalFocusMinutes += focusDuration
                     isBreakTime = true
                     completedFocusSessions += 1
-                    if currentCycleIndex < 7 {
+                    if currentCycleIndex < 6 {
                         timeRemaining = breakDuration * 60
                     } else {
                         timeRemaining = longBreakDuration * 60
@@ -181,7 +181,7 @@ struct TimerView: View {
                 }
 
                 if autoFlow {
-                    isRunning = true && currentCycleIndex < 7
+                    isRunning = true && currentCycleIndex < 6
                     startTimer()
                 } else {
                     stopTimer()
